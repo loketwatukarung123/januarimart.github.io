@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aplikasi Kasir — Demo Satu File</title>
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --card:#111827; /* gray-900 */
+      --muted:#94a3b8; /* slate-400 */
+      --text:#e5e7eb; /* gray-200 */
+      --primary:#22c55e; /* green-500 */
+      --accent:#3b82f6; /* blue-500 */
+      --danger:#ef4444; /* red-500 */
+      --warn:#f59e0b; /* amber-500 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 80% -10%, #1f2937 0%, #0b1020 35%, #000 100%), var(--bg);
+      color:var(--text);
+    }
+    .container{max-width:1100px;margin:40px auto;padding:16px}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:24px;
+      backdrop-filter: blur(6px);
+    }
+    h1,h2,h3{margin:0 0 12px}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:12px;align-items:center}
+    .col{display:flex;flex-direction:column;gap:8px}
+    .grid{display:grid;gap:12px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .grid-3{grid-template-columns:repeat(3,1fr)}
+    @media (max-width: 860px){.grid-2,.grid-3{grid-template-columns:1fr}}
+    input,button,select,textarea{
+      padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04); color:var(--text);
+    }
+    input::placeholder{color:#9ca3af}
+    button{cursor:pointer; font-weight:600}
+    .btn{background:linear-gradient(180deg, rgba(34,197,94,.9), rgba(34,197,94,.75)); border:none}
+    .btn:hover{filter:brightness(1.05)}
+    .btn-outline{background:transparent;border:1px solid var(--muted)}
+    .btn-accent{background:linear-gradient(180deg, rgba(59,130,246,.9), rgba(59,130,246,.75)); border:none}
+    .btn-danger{background:linear-gradient(180deg, rgba(239,68,68,.9), rgba(239,68,68,.75)); border:none}
+    .btn-warn{background:linear-gradient(180deg, rgba(245,158,11,.9), rgba(245,158,11,.75)); border:none}
+    .space{height:12px}
+    .hidden{display:none !important}
+    table{width:100%; border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+    th{font-weight:700}
+    .right{text-align:right}
+    .center{text-align:center}
+
+    /* Tabs/navbar */
+    .navbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .navbar button{border:1px solid rgba(255,255,255,.15);}
+
+    /* Receipt print */
+    #printArea{background:white;color:black;padding:12px;border-radius:8px}
+    #printArea *{color:black}
+    .receipt{
+      font-family: "Courier New", monospace; color:#111; max-width: 310px; margin: 0 auto;
+    }
+    .receipt h3{margin:6px 0;text-align:center}
+    .receipt .line{display:flex;justify-content:space-between}
+    .receipt hr{border:0;border-top:1px dashed #111;margin:6px 0}
+
+   @media print {
+  body * {
+    visibility: hidden;
+  }
+  #printArea, #printArea * {
+    visibility: visible;
+  }
+  #printArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- LOGIN -->
+    <section id="page-login" class="card">
+      <h1>Masuk Kasir</h1>
+      <p class="muted">Demo akun: <code>admin</code> / <code>admin</code></p>
+      <div class="grid grid-2">
+        <div class="col">
+          <label>Nama Pengguna</label>
+          <input id="login-username" placeholder="username" autocomplete="username" />
+        </div>
+        <div class="col">
+          <label>Kata Sandi</label>
+          <input id="login-password" placeholder="password" type="password" autocomplete="current-password" />
+        </div>
+      </div>
+      <div class="space"></div>
+      <div class="row">
+        <button class="btn" id="btn-login">Masuk</button>
+        <button class="btn-outline" id="btn-login-reset" type="button">Reset</button>
+      </div>
+    </section>
+
+    <!-- NAVBAR + PAGES WRAPPER -->
+    <section id="app" class="hidden">
+      <div class="card no-print" style="margin-bottom:12px">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 style="margin:0">Aplikasi Kasir</h2>
+          <div class="row">
+            <button class="btn-outline" id="btn-logout">Keluar</button>
+          </div>
+        </div>
+        <div class="space"></div>
+        <div class="navbar">
+          <button class="btn-accent" data-nav="home">🏠 Menu Utama</button>
+          <button class="btn" data-nav="transaksi">🧾 Transaksi</button>
+          <button class="btn-warn" data-nav="produk">➕ Tambah Produk</button>
+        </div>
+      </div>
+
+      <!-- HOME -->
+      <div id="page-home" class="card">
+        <h2>Menu Utama</h2>
+        <p class="muted">Pilih fitur:</p>
+        <div class="grid grid-3">
+          <button class="btn-accent" data-nav="transaksi">Mulai Transaksi</button>
+          <button class="btn-warn" data-nav="produk">Tambah Produk</button>
+          <button class="btn-outline" id="btn-backup">📦 Backup Data (JSON)</button>
+        </div>
+      </div>
+
+      <!-- TRANSAKSI -->
+      <div id="page-transaksi" class="card hidden">
+        <div class="row" style="justify-content:space-between">
+          <h2>Transaksi</h2>
+          <div class="row">
+            <input id="search" placeholder="Cari nama/kode..." />
+            <button class="btn-outline" id="btn-clear-search">Bersihkan</button>
+          </div>
+        </div>
+        <div class="space"></div>
+        <div class="grid grid-2">
+          <div class="col">
+            <table id="tbl-produk">
+              <thead>
+                <tr><th>Kode</th><th>Nama</th><th class="right">Harga</th><th class="center">Aksi</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="col">
+            <div class="row" style="justify-content:space-between; align-items:center">
+              <h3>Keranjang</h3>
+              <button class="btn-outline" id="btn-clear-cart">Kosongkan</button>
+            </div>
+            <table id="tbl-cart">
+              <thead>
+                <tr><th>Item</th><th class="center">Qty</th><th class="right">Harga</th><th class="right">Subtotal</th><th class="center">🗑</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div class="space"></div>
+            <div class="row" style="justify-content:space-between">
+              <strong>Total</strong>
+              <strong id="cart-total">Rp0</strong>
+            </div>
+            <div class="space"></div>
+            <div class="grid grid-2">
+              <div class="col">
+                <label>Tunai</label>
+                <input id="pay-cash" type="number" placeholder="Masukkan nominal" />
+              </div>
+              <div class="col">
+                <label>Kembalian</label>
+                <input id="pay-change" type="text" disabled />
+              </div>
+            </div>
+            <div class="space"></div>
+            <div class="row" style="justify-content:flex-end;gap:8px">
+              <button class="btn-outline" id="btn-simpan-transaksi">Simpan</button>
+              <button class="btn" id="btn-print">Cetak Nota</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAMBAH PRODUK -->
+      <div id="page-produk" class="card hidden">
+        <h2>Tambah / Kelola Produk</h2>
+        <p class="muted">Data tersimpan di <em>LocalStorage</em> per browser.</p>
+        <div class="grid grid-3">
+          <div class="col">
+            <label>Kode SKU</label>
+            <input id="p-kode" placeholder="cth: BRG001" />
+          </div>
+          <div class="col">
+            <label>Nama</label>
+            <input id="p-nama" placeholder="Nama produk" />
+          </div>
+          <div class="col">
+            <label>Harga (Rp)</label>
+            <input id="p-harga" type="number" placeholder="0" />
+          </div>
+        </div>
+        <div class="space"></div>
+        <div class="row">
+          <button class="btn-warn" id="btn-tambah">Simpan / Tambah</button>
+          <button class="btn-outline" id="btn-reset-produk" type="button">Reset Form</button>
+          <button class="btn-danger" id="btn-wipe" type="button">Hapus Semua Produk</button>
+        </div>
+        <div class="space"></div>
+        <table id="tbl-master">
+          <thead>
+            <tr><th>Kode</th><th>Nama</th><th class="right">Harga</th><th class="center">Edit</th><th class="center">Hapus</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- PRINT AREA -->
+      <div id="printArea" class="hidden">
+        <div class="receipt" id="receipt"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ===== Utils =====
+    const fmtIDR = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR', maximumFractionDigits:0}).format(n||0);
+    const byId = id => document.getElementById(id);
+    const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+    const load = (k,d=[]) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch(e){ return d } };
+    const uid = () => 'TRX-' + Date.now().toString(36).toUpperCase();
+
+    // ===== Auth (demo) =====
+    const DEMO_USER = { username:'admin', password:'admin', name:'Administrator' };
+
+    function setSession(on){
+      if(on){ sessionStorage.setItem('loggedIn','1'); } else { sessionStorage.removeItem('loggedIn'); }
+      byId('page-login').classList.toggle('hidden', !!on);
+      byId('app').classList.toggle('hidden', !on);
+      if(on){ navigate('home'); }
+    }
+
+    byId('btn-login').onclick = () => {
+      const u = byId('login-username').value.trim();
+      const p = byId('login-password').value;
+      if(u===DEMO_USER.username && p===DEMO_USER.password){ setSession(true); }
+      else { alert('Username atau password salah. Gunakan admin/admin untuk demo.'); }
+    };
+    byId('btn-login-reset').onclick = () => { byId('login-username').value=''; byId('login-password').value=''; };
+    byId('btn-logout').onclick = () => { setSession(false); };
+
+    // ===== Navigation =====
+    document.querySelectorAll('[data-nav]').forEach(btn=>{
+      btn.addEventListener('click', ()=> navigate(btn.dataset.nav));
+    });
+
+    function navigate(to){
+      ['home','transaksi','produk'].forEach(id=> byId('page-'+id).classList.add('hidden'));
+      byId('page-'+to).classList.remove('hidden');
+      if(to==='transaksi'){ renderProdukList(); renderCart(); }
+      if(to==='produk'){ renderMaster(); }
+      if(to==='home'){}
+    }
+
+    // ===== Data =====
+    const seed = [
+      {kode:'BRG001', nama:'Air Mineral 600ml', harga:4000},
+      {kode:'BRG002', nama:'Mi Instan', harga:3500},
+      {kode:'BRG003', nama:'Kopi Botol', harga:12000}
+    ];
+    if(load('products',null)===null){ save('products', seed); }
+
+    // ===== Produk (Master) =====
+    function getProducts(){ return load('products', []); }
+    function setProducts(arr){ save('products', arr); }
+
+    function renderMaster(){
+      const tbody = document.querySelector('#tbl-master tbody');
+      tbody.innerHTML='';
+      getProducts().forEach((p,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.kode}</td>
+          <td>${p.nama}</td>
+          <td class="right">${fmtIDR(p.harga)}</td>
+          <td class="center"><button class="btn-outline" data-edit="${i}">Edit</button></td>
+          <td class="center"><button class="btn-danger" data-del="${i}">Hapus</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+      tbody.querySelectorAll('[data-edit]').forEach(btn=> btn.onclick = () => {
+        const p = getProducts()[+btn.dataset.edit];
+        byId('p-kode').value = p.kode; byId('p-nama').value = p.nama; byId('p-harga').value = p.harga;
+      });
+      tbody.querySelectorAll('[data-del]').forEach(btn=> btn.onclick = () => {
+        if(confirm('Hapus produk ini?')){
+          const arr = getProducts(); arr.splice(+btn.dataset.del,1); setProducts(arr); renderMaster(); renderProdukList();
+        }
+      });
+    }
+
+    byId('btn-tambah').onclick = () => {
+      const kode = byId('p-kode').value.trim();
+      const nama = byId('p-nama').value.trim();
+      const harga = +byId('p-harga').value;
+      if(!kode || !nama || !harga){ alert('Lengkapi data produk.'); return; }
+      const arr = getProducts();
+      const idx = arr.findIndex(p=>p.kode.toUpperCase()===kode.toUpperCase());
+      if(idx>-1){ arr[idx] = {kode, nama, harga}; }
+      else { arr.push({kode, nama, harga}); }
+      setProducts(arr);
+      renderMaster(); renderProdukList();
+      byId('p-kode').value=''; byId('p-nama').value=''; byId('p-harga').value='';
+    };
+    byId('btn-reset-produk').onclick = () => { byId('p-kode').value=''; byId('p-nama').value=''; byId('p-harga').value=''; };
+    byId('btn-wipe').onclick = () => {
+      if(confirm('Hapus SEMUA produk?')){ setProducts([]); renderMaster(); renderProdukList(); }
+    };
+
+    // ===== Transaksi =====
+    let cart = [];
+
+    function renderProdukList(){
+      const q = byId('search').value.trim().toLowerCase();
+      const tbody = document.querySelector('#tbl-produk tbody');
+      tbody.innerHTML='';
+      getProducts().filter(p=> !q || p.nama.toLowerCase().includes(q) || p.kode.toLowerCase().includes(q))
+      .forEach((p)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.kode}</td>
+          <td>${p.nama}</td>
+          <td class="right">${fmtIDR(p.harga)}</td>
+          <td class="center">
+            <div class="row" style="justify-content:center">
+              <input type="number" min="1" value="1" style="width:80px"/>
+              <button class="btn" data-add="${p.kode}">Tambah</button>
+            </div>
+          </td>
+        `;
+        const qtyInput = tr.querySelector('input');
+        tr.querySelector('[data-add]').onclick = () => addToCart(p, +qtyInput.value || 1);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addToCart(p, qty=1){
+      const i = cart.findIndex(it=>it.kode===p.kode);
+      if(i>-1) cart[i].qty += qty; else cart.push({kode:p.kode, nama:p.nama, harga:p.harga, qty});
+      renderCart();
+    }
+
+    function renderCart(){
+      const tbody = document.querySelector('#tbl-cart tbody');
+      tbody.innerHTML='';
+      let total = 0;
+      cart.forEach((it,idx)=>{
+        const sub = it.harga * it.qty; total += sub;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${it.nama}</td>
+          <td class="center">
+            <input type="number" min="1" value="${it.qty}" style="width:80px"/>
+          </td>
+          <td class="right">${fmtIDR(it.harga)}</td>
+          <td class="right">${fmtIDR(sub)}</td>
+          <td class="center"><button class="btn-danger" data-rm="${idx}">✕</button></td>
+        `;
+        tr.querySelector('input').onchange = (e)=>{ cart[idx].qty = Math.max(1, +e.target.value||1); renderCart(); };
+        tr.querySelector('[data-rm]').onclick = ()=>{ cart.splice(idx,1); renderCart(); };
+        tbody.appendChild(tr);
+      });
+      byId('cart-total').textContent = fmtIDR(total);
+      const cash = +byId('pay-cash').value || 0; byId('pay-change').value = cash>0? fmtIDR(Math.max(0, cash-total)) : '';
+    }
+
+    byId('search').oninput = renderProdukList;
+    byId('btn-clear-search').onclick = () => { byId('search').value=''; renderProdukList(); };
+    byId('btn-clear-cart').onclick = () => { if(confirm('Kosongkan keranjang?')){ cart = []; renderCart(); } };
+    byId('pay-cash').oninput = renderCart;
+
+    byId('btn-simpan-transaksi').onclick = () => {
+      if(cart.length===0){ alert('Keranjang kosong.'); return; }
+      const total = cart.reduce((a,b)=> a + b.harga*b.qty, 0);
+      const trx = { id: uid(), time: new Date().toISOString(), items:[...cart], total };
+      const hist = load('history', []); hist.push(trx); save('history', hist);
+      alert('Transaksi disimpan: '+ trx.id);
+    };
+
+    // ===== Cetak Nota =====
+    byId('btn-print').onclick = () => {
+      if(cart.length===0){ alert('Keranjang kosong.'); return; }
+      const total = cart.reduce((a,b)=> a + b.harga*b.qty, 0);
+      const cash = +byId('pay-cash').value || 0;
+      const change = Math.max(0, cash-total);
+      const id = uid();
+      const now = new Date();
+      const lines = cart.map(it=>`<div class="line"><span>${it.nama} x${it.qty}</span><span>${fmtIDR(it.harga*it.qty)}</span></div>`).join('');
+      const html = `
+        <h3>TOKO JANUARIMART</h3>
+        <div class="center">Jl. Watukarung-Klayar , pacitan</div>
+        <div class="center">${now.toLocaleString('id-ID')}</div>
+        <div class="center">ID: ${id}</div>
+        <hr/>
+        ${lines}
+        <hr/>
+        <div class="line"><strong>Total</strong><strong>${fmtIDR(total)}</strong></div>
+        <div class="line"><span>Tunai</span><span>${fmtIDR(cash)}</span></div>
+        <div class="line"><span>Kembali</span><span>${fmtIDR(change)}</span></div>
+        <hr/>
+        <div class="center">Terima kasih 🙏</div>
+      `;
+      byId('receipt').innerHTML = html;
+      byId('printArea').classList.remove('hidden');
+      window.print();
+      byId('printArea').classList.add('hidden');
+    };
+
+    // ===== Backup (export JSON) =====
+    byId('btn-backup').onclick = () => {
+      const data = {
+        products: getProducts(),
+        history: load('history', [])
+      };
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'kasir-backup.json'; a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // ===== Init =====
+    if(sessionStorage.getItem('loggedIn')==='1'){ setSession(true); }
+  </script>
+</body>
+</html>
